@@ -3,10 +3,11 @@ import json
 import pygame
 import threading
 import sys
+import time
 
 
 class PongClient:
-    def __init__(self, server_ip, server_port=6001):
+    def __init__(self, server_ip, server_port=6000):
         # Initialize pygame
         pygame.init()
 
@@ -64,6 +65,11 @@ class PongClient:
             pygame.quit()
             sys.exit()
 
+        # Add controls for movement state
+        self.moving_up = False
+        self.moving_down = False
+        self.last_movement_sent = 0
+
     def receive_game_state(self):
         """Continuously receive game state from server"""
         while True:
@@ -96,18 +102,37 @@ class PongClient:
         # Main game loop
         clock = pygame.time.Clock()
         running = True
+
+        # Frame rate control
+        target_fps = 60
+
         while running:
+            frame_start_time = time.time()
+
             # Handle events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        self.moving_up = True
+                    elif event.key == pygame.K_DOWN:
+                        self.moving_down = True
+                elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_UP:
+                        self.moving_up = False
+                    elif event.key == pygame.K_DOWN:
+                        self.moving_down = False
 
-            # Handle key presses
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_UP]:
-                self.client.send("up".encode())
-            elif keys[pygame.K_DOWN]:
-                self.client.send("down".encode())
+            # Handle continuous movement based on key state
+            current_time = time.time()
+            if current_time - self.last_movement_sent > 0.02:  # Send movement command at most 50 times per second
+                if self.moving_up:
+                    self.client.send("up".encode())
+                    self.last_movement_sent = current_time
+                elif self.moving_down:
+                    self.client.send("down".encode())
+                    self.last_movement_sent = current_time
 
             # Draw everything
             self.screen.fill(self.BLACK)
@@ -174,11 +199,22 @@ class PongClient:
             player_text = self.small_font.render(f"Player {self.player_number}", True, self.WHITE)
             self.screen.blit(player_text, (10, self.height - 30))
 
+            # Display FPS
+            fps = clock.get_fps()
+            fps_text = self.small_font.render(f"FPS: {fps:.1f}", True, self.WHITE)
+            self.screen.blit(fps_text, (self.width - fps_text.get_width() - 10, self.height - 30))
+
             # Update display
             pygame.display.flip()
 
-            # Cap the frame rate
-            clock.tick(60)
+            # Strict frame timing for smooth animation
+            frame_time = time.time() - frame_start_time
+            remaining_time = max(0, (1.0 / target_fps) - frame_time)
+            if remaining_time > 0:
+                time.sleep(remaining_time)
+
+            # Update clock
+            clock.tick(target_fps)
 
         # Clean up
         pygame.quit()
