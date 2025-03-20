@@ -3,12 +3,12 @@ import threading
 import time
 import json
 import random
-
+import tkinter as tk
 
 class PongGame:
     def __init__(self):
-        self.width = 800
-        self.height = 600
+        self.width = 1920*2
+        self.height = 1200
         self.paddle_height = 100
         self.paddle_width = 15
         self.ball_size = 10
@@ -20,8 +20,8 @@ class PongGame:
         # Ball position and velocity
         self.ball_x = self.width // 2
         self.ball_y = self.height // 2
-        self.ball_speed_x = 5 * random.choice([-1, 1])
-        self.ball_speed_y = 5 * random.choice([-1, 1])
+        self.ball_speed_x = 10 * random.choice([-1, 1])
+        self.ball_speed_y = 10 * random.choice([-1, 1])
 
         # Score
         self.score1 = 0
@@ -88,6 +88,27 @@ class PongGame:
             "running": self.running
         }
 
+    def game_loop(self):
+        fps = 60  # Target frames per second
+        frame_duration = 1 / fps  # Duration of each frame in seconds
+
+        while self.running:
+            start_time = time.time()
+
+            # Update game state
+            self.update()
+
+            # Render the game (assuming you have a render method)
+            self.render()
+
+            # Calculate time taken for this frame
+            elapsed_time = time.time() - start_time
+
+            # Sleep to maintain consistent frame rate
+            time_to_sleep = frame_duration - elapsed_time
+            if time_to_sleep > 0:
+                time.sleep(time_to_sleep)
+
 
 def handle_client(client_socket, player_number, game):
     """Handle communication with a client"""
@@ -142,7 +163,7 @@ def game_loop(game):
         time.sleep(0.03)  # ~30 FPS
 
 
-def start_master(port=6000):
+def start_master(port=6001):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(('', port))
     server.listen()

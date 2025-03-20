@@ -6,13 +6,13 @@ import sys
 
 
 class PongClient:
-    def __init__(self, server_ip, server_port=6000):
+    def __init__(self, server_ip, server_port=6001):
         # Initialize pygame
         pygame.init()
 
         # Game window dimensions - full width for reference, but we'll only show half
-        self.total_width = 800
-        self.height = 600
+        self.total_width = 1920*2
+        self.height = 1200
         self.width = self.total_width // 2  # Each client shows half the width
 
         self.screen = pygame.display.set_mode((self.width, self.height))
